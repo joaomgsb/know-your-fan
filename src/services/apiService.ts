@@ -345,6 +345,8 @@ class APIService {
       if (!document.url) {
         throw new Error('URL do documento não disponível');
       }
+
+      console.log(document)
       
       // Verificar o documento usando o serviço de IA real
       const verificationResult = await aiService.verifyDocument(
