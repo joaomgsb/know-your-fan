@@ -350,8 +350,7 @@ class APIService {
       
       // Verificar o documento usando o serviço de IA real
       const verificationResult = await aiService.verifyDocument(
-        document.url,
-        document.type
+        document.url
       );
       
       // Mapear o resultado da verificação para o formato do perfil de usuário

@@ -67,7 +67,8 @@ export class AIService {
 
       return {
         isValid: response.data.isCPFValid,
-        confidence: response.data.confidence
+        confidence: response.data.confidence,
+        details: response.data
       }
 
     } catch (error) {
