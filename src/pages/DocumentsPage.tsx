@@ -4,6 +4,20 @@ import { Upload, Check, AlertCircle, FileText, Trash2, Shield, Eye } from 'lucid
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'react-hot-toast';
 
+interface VerificationDetails {
+  confidence: number;
+  extractedCPF?: string;
+  extractedText?: string;
+  isCPFValid?: boolean;
+  isDocumentValid?: boolean;
+}
+
+interface SocialProfileAnalysisResult {
+  riskLevel: 'low' | 'medium' | 'high';
+  flags: string[];
+  details?: Record<string, unknown>;
+}
+
 const DocumentsPage: React.FC = () => {
   const { user, uploadDocument, verifyDocument } = useUser();
   const navigate = useNavigate();
@@ -106,7 +120,8 @@ const DocumentsPage: React.FC = () => {
     const doc = user.documents?.[documentIndex];
     if (!doc || !doc.verificationResult) return null;
     
-    const result = doc.verificationResult;
+    const result = doc.verificationResult as SocialProfileAnalysisResult;
+    const details = result.details || {};
     
     return (
       <div className="mt-4 bg-gray-50 p-4 rounded-md">
@@ -114,24 +129,28 @@ const DocumentsPage: React.FC = () => {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">Confiança:</span>
-            <span className="font-medium">{result.confidence}%</span>
+            <span className="font-medium">{(Number(details.confidence) * 100).toFixed(2)}%</span>
           </div>
-          {result.matchedName && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">Nome confirmado:</span>
-              <span className="font-medium">{result.matchedName}</span>
-            </div>
-          )}
-          {result.matchedCPF && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">CPF confirmado:</span>
-              <span className="font-medium">{result.matchedCPF}</span>
-            </div>
-          )}
           <div className="flex justify-between">
-            <span className="text-gray-600">ID de verificação:</span>
-            <span className="font-medium text-xs">{result.verificationId}</span>
+            <span className="text-gray-600">CPF válido:</span>
+            <span className="font-medium">{details.isCPFValid === true ? "Sim" : "Não"}</span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Documento válido:</span>
+            <span className="font-medium">{details.isDocumentValid === true ? "Sim" : "Não"}</span>
+          </div>
+          {details.extractedCPF && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">CPF extraído:</span>
+              <span className="font-medium">{String(details.extractedCPF)}</span>
+            </div>
+          )}
+          {details.extractedText && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Texto extraído:</span>
+              <span className="font-medium break-all">{String(details.extractedText)}</span>
+            </div>
+          )}
         </div>
       </div>
     );
