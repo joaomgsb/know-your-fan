@@ -27,7 +27,7 @@ const UPCOMING_EVENTS = [
     description: 'Transmissão exclusiva com jogadores de CS:GO da FURIA respondendo perguntas dos fãs.',
     image: 'https://images.pexels.com/photos/9072388/pexels-photo-9072388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     category: 'Online',
-    tags: ['CS:GO', 'Q&A'],
+    tags: ['CS2', 'Q&A'],
     capacity: 2000,
     registered: 756
   },
@@ -37,10 +37,10 @@ const UPCOMING_EVENTS = [
     date: '2025-02-10',
     time: '15:00 - 17:00',
     location: 'Online',
-    description: 'Aprenda estratégias avançadas de CS:GO com os treinadores da FURIA.',
+    description: 'Aprenda estratégias avançadas de CS2 com os treinadores da FURIA.',
     image: 'https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     category: 'Online',
-    tags: ['CS:GO', 'Workshop', 'Educativo'],
+    tags: ['CS2', 'Workshop', 'Educativo'],
     capacity: 1000,
     registered: 432
   },

@@ -1,8 +1,24 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Trophy, Users, BadgeCheck, Calendar } from 'lucide-react';
+import { auth } from '../services/firebase';
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Verifica se o usuário está autenticado
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // Se estiver logado, redireciona para o dashboard
+        navigate('/dashboard');
+      }
+    });
+
+    // Cleanup da inscrição quando o componente for desmontado
+    return () => unsubscribe();
+  }, [navigate]);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}

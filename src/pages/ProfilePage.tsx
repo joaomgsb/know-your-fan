@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit2, Save, User, MapPin, Phone, Mail, Hash, Calendar, X } from 'lucide-react';
+import { Edit2, Save, User, MapPin, Phone, Mail, Hash, Calendar, X, Camera } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'react-hot-toast';
 
 const INTEREST_OPTIONS = [
-  'CS:GO', 'Valorant', 'League of Legends', 'Fortnite', 'Rainbow Six',
+  'CS2', 'Valorant', 'League of Legends', 'Fortnite', 'Rainbow Six',
   'Notícias', 'Eventos', 'Merchandise', 'Campeonatos', 'Conteúdo exclusivo',
   'Meet & Greet', 'Promoções', 'Treinos', 'Bastidores', 'Lives'
 ];
@@ -13,15 +13,18 @@ const INTEREST_OPTIONS = [
 const ProfilePage: React.FC = () => {
   const { user, updateUser } = useUser();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
     birthdate: user?.birthdate || '',
     cpf: user?.cpf || '',
+    profilePicture: user?.profilePicture || '',
     address: {
       street: user?.address?.street || '',
       number: user?.address?.number || '',
@@ -92,10 +95,58 @@ const ProfilePage: React.FC = () => {
       phone: user.phone,
       birthdate: user.birthdate,
       cpf: user.cpf,
+      profilePicture: user.profilePicture || '',
       address: { ...user.address },
       interests: user.interests || []
     });
     setIsEditing(false);
+  };
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    // Validar tamanho (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      // Converter imagem para base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        
+        // Atualizar o estado local e o perfil do usuário
+        setProfileData(prev => ({ ...prev, profilePicture: base64String }));
+        await updateUser({ ...profileData, profilePicture: base64String });
+        
+        toast.success('Foto de perfil atualizada com sucesso!');
+        setIsUploadingPhoto(false);
+      };
+      
+      reader.onerror = () => {
+        toast.error('Erro ao processar a imagem');
+        setIsUploadingPhoto(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Erro ao atualizar foto de perfil');
+      setIsUploadingPhoto(false);
+    }
   };
 
   // Format date for display
@@ -116,17 +167,41 @@ const ProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="bg-black text-white p-6 relative">
             <div className="flex flex-col md:flex-row md:items-center">
-              <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-black mb-4 md:mb-0 md:mr-6">
-                {user.profilePicture ? (
-                  <img 
-                    src={user.profilePicture} 
-                    alt={user.name} 
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
+              <div 
+                className={`w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-black mb-4 md:mb-0 md:mr-6 relative group ${isEditing ? 'cursor-pointer' : ''}`}
+                onClick={isEditing ? handlePhotoClick : undefined}
+              >
+                {isUploadingPhoto ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                    <span className="inline-block h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  </div>
                 ) : (
-                  <User className="w-12 h-12" />
+                  <>
+                    {profileData.profilePicture ? (
+                      <img 
+                        src={profileData.profilePicture} 
+                        alt={profileData.name} 
+                        className="w-24 h-24 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-12 h-12" />
+                    )}
+                    {isEditing && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                disabled={!isEditing}
+              />
               <div>
                 <h1 className="text-3xl font-bold mb-1">{user.name}</h1>
                 <p className="text-gray-300 flex items-center">
