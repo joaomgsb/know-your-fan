@@ -13,6 +13,7 @@ import DocumentsPage from './pages/DocumentsPage';
 import SocialMediaPage from './pages/SocialMediaPage';
 import EventsPage from './pages/EventsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import FaceitPage from './pages/FaceitPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/social-media" element={<SocialMediaPage />} />
               <Route path="/events" element={<EventsPage />} />
+              <Route path="/faceit" element={<FaceitPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
