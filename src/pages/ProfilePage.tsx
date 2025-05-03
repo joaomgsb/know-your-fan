@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Edit2, Save, User, MapPin, Phone, Mail, Hash, Calendar, X, Camera } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'react-hot-toast';
+import GamingProfiles from '../components/GamingProfiles';
 
 const INTEREST_OPTIONS = [
   'CS2', 'Valorant', 'League of Legends', 'Fortnite', 'Rainbow Six',
@@ -34,7 +35,8 @@ const ProfilePage: React.FC = () => {
       state: user?.address?.state || '',
       zipCode: user?.address?.zipCode || ''
     },
-    interests: user?.interests || []
+    interests: user?.interests || [],
+    gamingProfiles: user?.gamingProfiles || []
   });
 
   // Redirect if not logged in
@@ -97,7 +99,8 @@ const ProfilePage: React.FC = () => {
       cpf: user.cpf,
       profilePicture: user.profilePicture || '',
       address: { ...user.address },
-      interests: user.interests || []
+      interests: user.interests || [],
+      gamingProfiles: user.gamingProfiles || []
     });
     setIsEditing(false);
   };
@@ -147,6 +150,13 @@ const ProfilePage: React.FC = () => {
       toast.error('Erro ao atualizar foto de perfil');
       setIsUploadingPhoto(false);
     }
+  };
+
+  const handleGamingProfilesUpdate = (profiles: any[]) => {
+    setProfileData(prev => ({
+      ...prev,
+      gamingProfiles: profiles
+    }));
   };
 
   // Format date for display
@@ -536,6 +546,15 @@ const ProfilePage: React.FC = () => {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Gaming Profiles Section */}
+            <div className="mt-8">
+              <GamingProfiles
+                profiles={profileData.gamingProfiles}
+                isEditing={isEditing}
+                onUpdate={handleGamingProfilesUpdate}
+              />
             </div>
           </div>
         </div>

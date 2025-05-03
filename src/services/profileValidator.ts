@@ -1,0 +1,61 @@
+interface ValidationResponse {
+  isValid: boolean;
+  confidence: number;
+  reason?: string;
+}
+
+interface ProfileValidationData {
+  platform: string;
+  username: string;
+  profileUrl: string;
+  userInterests: string[];
+}
+
+// Função que simula uma validação com IA
+export const validateProfileRelevance = async (data: ProfileValidationData): Promise<ValidationResponse> => {
+  const { platform, profileUrl, userInterests } = data;
+  
+  // Aqui você pode integrar com um serviço de IA real
+  // Por enquanto, vamos fazer algumas validações básicas
+
+  // Validar formato da URL baseado na plataforma
+  const urlPatterns = {
+    'FACEIT': /faceit\.com\/([\w-]+)/i,
+    'GamersClub': /gamersclub\.com\.br\/player/i,
+    'Steam': /steamcommunity\.com\/(?:id|profiles)/i,
+    'Riot Games': /tracker\.gg\/valorant\/profile/i
+  };
+
+  const pattern = urlPatterns[platform as keyof typeof urlPatterns];
+  if (!pattern?.test(profileUrl)) {
+    return {
+      isValid: false,
+      confidence: 0.9,
+      reason: `URL inválida para a plataforma ${platform}. Por favor, verifique o formato correto.`
+    };
+  }
+
+  // Verificar se a plataforma está relacionada aos interesses do usuário
+  const platformGames: Record<string, string[]> = {
+    'FACEIT': ['CS2'],
+    'GamersClub': ['CS2'],
+    'Steam': ['CS2', 'Rainbow Six'],
+    'Riot Games': ['Valorant', 'League of Legends']
+  };
+
+  const relevantGames = platformGames[platform as keyof typeof platformGames] || [];
+  const hasRelevantInterests = relevantGames.some(game => userInterests.includes(game));
+
+  if (!hasRelevantInterests) {
+    return {
+      isValid: false,
+      confidence: 0.7,
+      reason: `Esta plataforma é mais relacionada a ${relevantGames.join(', ')}, que não estão nos seus interesses.`
+    };
+  }
+
+  return {
+    isValid: true,
+    confidence: 0.95
+  };
+}; 
