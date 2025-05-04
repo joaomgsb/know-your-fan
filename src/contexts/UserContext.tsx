@@ -29,6 +29,11 @@ export interface UserData {
     username: string;
     url: string;
     analysisResult?: SocialProfileAnalysisResult;
+    manualData?: {
+      followedTeams: string;
+      recentInteractions: string;
+      favoriteGames: string;
+    };
   }[];
   documents?: {
     type: string;
@@ -72,7 +77,11 @@ interface UserContextType {
   registerUser: (data: RegisterData) => Promise<void>;
   updateUser: (data: Partial<UserData>) => Promise<void>;
   uploadDocument: (file: File, type: string) => Promise<void>;
-  linkSocialProfile: (platform: string, username: string, url: string) => Promise<void>;
+  linkSocialProfile: (platform: string, username: string, url: string, manualData?: {
+    followedTeams: string;
+    recentInteractions: string;
+    favoriteGames: string;
+  }) => Promise<void>;
   removeSocialProfile: (profileId: string) => Promise<void>;
   verifyDocument: (documentId: string) => Promise<DocumentAnalysisResult>;
   analyzeSocialProfile: (socialProfileId: string) => Promise<SocialProfileAnalysisResult>;
@@ -194,7 +203,16 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const linkSocialProfile = async (platform: string, username: string, url: string): Promise<void> => {
+  const linkSocialProfile = async (
+    platform: string, 
+    username: string, 
+    url: string,
+    manualData?: {
+      followedTeams: string;
+      recentInteractions: string;
+      favoriteGames: string;
+    }
+  ): Promise<void> => {
     try {
       setIsLoading(true);
       
@@ -202,9 +220,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Usuário não autenticado');
       }
       
-      const updatedUser = await apiService.linkSocialProfile(user.id, platform, username, url);
+      const updatedUser = await apiService.linkSocialProfile(user.id, platform, username, url, manualData);
       setUser(updatedUser);
-      toast.success('Perfil social vinculado com sucesso!');
+      toast.success(`Perfil do ${platform} vinculado com sucesso!`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Falha ao vincular perfil social');
       throw error;

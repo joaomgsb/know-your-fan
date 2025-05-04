@@ -275,9 +275,19 @@ class APIService {
   }
   
   /**
-   * Método para vincular perfil de rede social
+   * Método para vincular perfil social
    */
-  async linkSocialProfile(userId: string, platform: string, username: string, url: string): Promise<UserData> {
+  async linkSocialProfile(
+    userId: string, 
+    platform: string, 
+    username: string, 
+    url: string,
+    manualData?: {
+      followedTeams: string;
+      recentInteractions: string;
+      favoriteGames: string;
+    }
+  ): Promise<UserData> {
     try {
       const currentUser = auth.currentUser;
       
@@ -285,15 +295,30 @@ class APIService {
         throw new Error('Não autorizado a vincular perfis para este usuário');
       }
       
+      // Buscar usuário atual para adicionar o perfil
+      const userRef = doc(db, "users", userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        throw new Error('Usuário não encontrado');
+      }
+      
+      const userData = userDoc.data() as UserData;
+      
+      // Verificar se o perfil já existe
+      if (userData.socialProfiles?.some(p => p.platform === platform && p.username === username)) {
+        throw new Error('Este perfil já está vinculado');
+      }
+      
       // Criar novo perfil
       const newProfile = {
         platform,
         username,
-        url
+        url,
+        manualData
       };
       
       // Atualizar no Firestore
-      const userRef = doc(db, "users", userId);
       await updateDoc(userRef, {
         socialProfiles: arrayUnion(newProfile)
       });
@@ -302,7 +327,7 @@ class APIService {
       const updatedUserDoc = await getDoc(userRef);
       
       if (!updatedUserDoc.exists()) {
-        throw new Error('Dados do usuário não encontrados após vinculação de perfil');
+        throw new Error('Dados do usuário não encontrados após vinculação');
       }
       
       return updatedUserDoc.data() as UserData;
@@ -406,17 +431,17 @@ class APIService {
   }
   
   /**
-   * Método para analisar perfil social com IA
+   * Método para analisar um perfil social
    */
   async analyzeSocialProfile(userId: string, profileId: string): Promise<UserData> {
     try {
       const currentUser = auth.currentUser;
       
       if (!currentUser || currentUser.uid !== userId) {
-        throw new Error('Não autorizado a analisar perfis deste usuário');
+        throw new Error('Não autorizado a analisar este perfil');
       }
       
-      // Buscar usuário atual para modificar o perfil
+      // Buscar dados do usuário
       const userDoc = await getDoc(doc(db, "users", userId));
       
       if (!userDoc.exists()) {
@@ -424,28 +449,25 @@ class APIService {
       }
       
       const userData = userDoc.data() as UserData;
-      
-      // Como profileId é passado como índice, converter para número
       const profileIndex = parseInt(profileId);
       
-      // Verificar se o índice é válido
-      if (isNaN(profileIndex) || !userData.socialProfiles || profileIndex >= userData.socialProfiles.length) {
+      if (!userData.socialProfiles || !userData.socialProfiles[profileIndex]) {
         throw new Error('Perfil social não encontrado');
       }
       
-      // Perfil atual
-      const currentProfile = userData.socialProfiles[profileIndex];
+      const profile = userData.socialProfiles[profileIndex];
       
-      // Analisar o perfil usando o serviço de IA real
+      // Analisar o perfil usando o serviço de IA
       const analysisResult = await aiService.analyzeSocialProfile(
-        currentProfile.platform,
-        currentProfile.url
+        profile.platform,
+        profile.url,
+        profile.manualData
       );
       
-      // Atualizar o perfil social
+      // Atualizar o perfil com o resultado da análise
       const updatedProfiles = [...userData.socialProfiles];
       updatedProfiles[profileIndex] = {
-        ...updatedProfiles[profileIndex],
+        ...profile,
         analysisResult
       };
       
@@ -455,17 +477,14 @@ class APIService {
         socialProfiles: updatedProfiles
       });
       
-      // Buscar dados atualizados
-      const updatedUserDoc = await getDoc(userRef);
-      
-      if (!updatedUserDoc.exists()) {
-        throw new Error('Dados do usuário não encontrados após análise de perfil');
-      }
-      
-      return updatedUserDoc.data() as UserData;
+      // Retornar dados atualizados
+      return {
+        ...userData,
+        socialProfiles: updatedProfiles
+      };
     } catch (error) {
-      const fbError = error as FirebaseError;
-      throw new Error('Erro ao analisar perfil social: ' + fbError.message);
+      console.error('Erro ao analisar perfil:', error);
+      throw error;
     }
   }
 }

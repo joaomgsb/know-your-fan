@@ -3,15 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { Twitter, Instagram, Twitch, Youtube, Check, Link as LinkIcon, X, Brain, BarChart } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { toast } from 'react-hot-toast';
-import { openai } from '../services/openaiService';
 
-interface SocialProfileAnalysis {
-  relevanceScore: number;
-  eSportsEngagement: number;
-  furiaEngagement: number;
-  keywords: string[];
-  followedTeams: string[];
-  recommendedContent: string[];
+interface SocialProfileAnalysisResult {
+  riskLevel: 'low' | 'medium' | 'high';
+  flags: string[];
+  details: {
+    followedTeams: string[];
+    recommendations: string[];
+    relevanceScore: number;
+    esportsScore: number;
+    furiaScore: number;
+    keywords: string[];
+  };
 }
 
 type SocialPlatform = 'Twitter' | 'Instagram' | 'Twitch';
@@ -22,19 +25,8 @@ interface ManualSocialData {
   favoriteGames: string;
 }
 
-interface OpenAIResponse {
-  riskLevel: 'low' | 'medium' | 'high';
-  flags: string[];
-  followedTeams: string[];
-  recommendations: string[];
-  relevanceScore: number;
-  esportsScore: number;
-  furiaScore: number;
-  keywords: string[];
-}
-
 const SocialMediaPage: React.FC = () => {
-  const { user, linkSocialProfile, removeSocialProfile } = useUser();
+  const { user, linkSocialProfile, removeSocialProfile, analyzeSocialProfile } = useUser();
   const navigate = useNavigate();
 
   const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform>('Twitter');
@@ -86,8 +78,7 @@ const SocialMediaPage: React.FC = () => {
     
     setIsLinking(true);
     try {
-      await linkSocialProfile(selectedPlatform, username, socialUrl);
-      toast.success(`Perfil do ${selectedPlatform} vinculado com sucesso!`);
+      await linkSocialProfile(selectedPlatform, username, socialUrl, manualData);
       setUsername('');
       setManualData({
         followedTeams: '',
@@ -107,122 +98,25 @@ const SocialMediaPage: React.FC = () => {
   };
 
   const handleAnalyzeProfile = async (index: string) => {
+    if (isAnalyzing) return;
     setIsAnalyzing(index);
+
     try {
-      const profiles = user.socialProfiles || [];
-      const profile = profiles[parseInt(index)];
-      
-      if (!profile) {
-        throw new Error('Perfil não encontrado');
-      }
-
-      // Preparar o prompt para a OpenAI
-      const prompt = `
-Analise este perfil de rede social e retorne um JSON com informações sobre engajamento em e-sports:
-
-Plataforma: ${profile.platform}
-Username: ${profile.username}
-URL: ${profile.url}
-
-Retorne APENAS um objeto JSON com este formato exato:
-{
-  "riskLevel": "low",
-  "flags": ["cs2", "valorant", "furia"],
-  "followedTeams": ["FURIA", "MIBR"],
-  "recommendations": ["Assista as partidas da FURIA"],
-  "relevanceScore": 80,
-  "esportsScore": 70,
-  "furiaScore": 60,
-  "keywords": ["cs2", "valorant"]
-}`.trim();
-
-      // Chamar a OpenAI
-      const completion = await openai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "Você é um analisador de perfis. Responda APENAS com o JSON solicitado, sem texto adicional."
-          },
-          { role: "user", content: prompt }
-        ],
-        model: "gpt-4o-mini"
-      });
-
-      const responseText = completion.choices?.[0]?.message?.content;
-      console.log('Resposta bruta da OpenAI:', responseText); // Debug
-
-      if (!responseText) {
-        throw new Error('Resposta vazia da IA');
-      }
-
-      // Tentar extrair apenas o JSON da resposta
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Nenhum JSON encontrado na resposta');
-      }
-
-      // Processar a resposta
-      let response: OpenAIResponse;
-      try {
-        response = JSON.parse(jsonMatch[0]);
-        
-        // Validar campos obrigatórios
-        if (!response.riskLevel || !Array.isArray(response.flags) || !Array.isArray(response.followedTeams)) {
-          throw new Error('Resposta JSON inválida: campos obrigatórios ausentes');
-        }
-
-      } catch (parseError) {
-        console.error('Erro ao fazer parse do JSON:', parseError);
-        console.log('Texto que causou erro:', jsonMatch[0]);
-        
-        // Usar um fallback em caso de erro
-        response = {
-          riskLevel: 'medium',
-          flags: ['esports'],
-          followedTeams: ['FURIA'],
-          recommendations: ['Confira as últimas partidas'],
-          relevanceScore: 50,
-          esportsScore: 50,
-          furiaScore: 50,
-          keywords: ['esports']
-        };
-      }
-
-      // Atualizar o perfil com o resultado
-      const updatedProfiles = [...profiles];
-      updatedProfiles[parseInt(index)] = {
-        ...profile,
-        analysisResult: {
-          riskLevel: response.riskLevel,
-          flags: response.flags,
-          details: {
-            followedTeams: response.followedTeams,
-            recommendations: response.recommendations || [],
-            relevanceScore: response.relevanceScore || 50,
-            esportsScore: response.esportsScore || 50,
-            furiaScore: response.furiaScore || 50,
-            keywords: response.keywords || []
-          }
-        }
-      };
-
-      // Atualizar o usuário
-      if (user) {
-        user.socialProfiles = updatedProfiles;
-      }
+      // Analisar o perfil usando o contexto do usuário
+      await analyzeSocialProfile(index);
 
       // Mostrar a análise
       setShowAnalysis(index);
       toast.success('Perfil analisado com sucesso!');
     } catch (err) {
       console.error('Erro ao analisar perfil:', err);
-      toast.error('Erro ao analisar perfil. Verifique o console para mais detalhes.');
+      toast.error(`Erro ao analisar perfil: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
       setIsAnalyzing(null);
     }
   };
 
-  const renderAnalysisDetails = (analysis: SocialProfileAnalysis) => {
+  const renderAnalysisDetails = (analysis: SocialProfileAnalysisResult) => {
     return (
       <div className="mt-4 bg-gray-50 p-4 rounded-md">
         <h4 className="text-sm font-medium mb-3">Análise de Engajamento</h4>
@@ -233,12 +127,12 @@ Retorne APENAS um objeto JSON com este formato exato:
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span>Relevância Geral</span>
-                <span className="font-medium">{analysis.relevanceScore}%</span>
+                <span className="font-medium">{analysis.details.relevanceScore}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-black h-2 rounded-full" 
-                  style={{ width: `${analysis.relevanceScore}%` }}
+                  style={{ width: `${analysis.details.relevanceScore}%` }}
                 ></div>
               </div>
             </div>
@@ -246,12 +140,12 @@ Retorne APENAS um objeto JSON com este formato exato:
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span>Engajamento eSports</span>
-                <span className="font-medium">{analysis.eSportsEngagement}%</span>
+                <span className="font-medium">{analysis.details.esportsScore}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-blue-500 h-2 rounded-full" 
-                  style={{ width: `${analysis.eSportsEngagement}%` }}
+                  style={{ width: `${analysis.details.esportsScore}%` }}
                 ></div>
               </div>
             </div>
@@ -259,12 +153,12 @@ Retorne APENAS um objeto JSON com este formato exato:
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span>Engajamento FURIA</span>
-                <span className="font-medium">{analysis.furiaEngagement}%</span>
+                <span className="font-medium">{analysis.details.furiaScore}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-green-500 h-2 rounded-full" 
-                  style={{ width: `${analysis.furiaEngagement}%` }}
+                  style={{ width: `${analysis.details.furiaScore}%` }}
                 ></div>
               </div>
             </div>
@@ -275,7 +169,7 @@ Retorne APENAS um objeto JSON com este formato exato:
             <div>
               <h5 className="font-medium text-xs text-gray-700 mb-2">Keywords Identificadas</h5>
               <div className="flex flex-wrap gap-1">
-                {analysis.keywords.map((keyword: string, idx: number) => (
+                {analysis.details.keywords.map((keyword: string, idx: number) => (
                   <span key={idx} className="px-2 py-1 bg-gray-200 rounded-full text-xs">
                     {keyword}
                   </span>
@@ -286,11 +180,11 @@ Retorne APENAS um objeto JSON com este formato exato:
             <div>
               <h5 className="font-medium text-xs text-gray-700 mb-2">Times Seguidos</h5>
               <div className="flex flex-wrap gap-1">
-                {analysis.followedTeams.map((team: string, idx: number) => (
+                {analysis.details.followedTeams.map((team: string, idx: number) => (
                   <span 
                     key={idx} 
                     className={`px-2 py-1 rounded-full text-xs ${
-                      team === 'FURIA' ? 'bg-black text-white' : 'bg-gray-200'
+                      team.toUpperCase().includes('FURIA') ? 'bg-black text-white' : 'bg-gray-200'
                     }`}
                   >
                     {team}
@@ -304,7 +198,7 @@ Retorne APENAS um objeto JSON com este formato exato:
           <div>
             <h5 className="font-medium text-xs text-gray-700 mb-2">Conteúdo Recomendado</h5>
             <ul className="text-sm space-y-1">
-              {analysis.recommendedContent.map((content: string, idx: number) => (
+              {analysis.details.recommendations.map((content: string, idx: number) => (
                 <li key={idx} className="text-xs text-gray-600">• {content}</li>
               ))}
             </ul>
@@ -544,15 +438,8 @@ Retorne APENAS um objeto JSON com este formato exato:
                   </div>
                   
                   {/* Mostrar detalhes da análise se disponível e selecionado */}
-                  {profile.analysisResult && showAnalysis === index.toString() && (
-                    renderAnalysisDetails({
-                      relevanceScore: profile.analysisResult.riskLevel === 'low' ? 90 : profile.analysisResult.riskLevel === 'medium' ? 60 : 30,
-                      eSportsEngagement: profile.analysisResult.flags.includes('esports') ? 80 : 40,
-                      furiaEngagement: profile.analysisResult.flags.includes('furia') ? 90 : 30,
-                      keywords: profile.analysisResult.flags,
-                      followedTeams: profile.analysisResult.details?.followedTeams as string[] || [],
-                      recommendedContent: profile.analysisResult.details?.recommendations as string[] || []
-                    })
+                  {profile.analysisResult?.details && showAnalysis === index.toString() && (
+                    renderAnalysisDetails(profile.analysisResult as SocialProfileAnalysisResult)
                   )}
                 </div>
               ))}
