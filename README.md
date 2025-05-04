@@ -1,8 +1,20 @@
+
 # FURIA - Know Your Fan 🎮
+
+> 🎯 Este projeto foi desenvolvido para o desafio **"Know Your Fan" da FURIA Esports** com o objetivo de criar uma solução que colete e analise dados dos fãs para oferecer experiências exclusivas baseadas em suas atividades e engajamento com e-sports.
 
 Aplicação para coleta e análise de dados de fãs da FURIA, seguindo a estratégia "Know Your Fan" para oferecer experiências e serviços exclusivos. A plataforma integra verificação de documentos, análise de redes sociais usando IA e estatísticas detalhadas do FACEIT.
 
-![FURIA Logo](https://upload.wikimedia.org/wikipedia/commons/7/7f/Logo_of_FURIA_Esports.svg)
+![FURIA Logo](public/images/furia.png)
+
+## ✔️ Entrega alinhada à proposta do desafio
+
+Esta aplicação atende a todos os requisitos definidos no enunciado:
+
+- ✅ Coleta de dados pessoais e históricos
+- ✅ Upload de documentos e verificação com IA
+- ✅ Vinculação e análise de redes sociais
+- ✅ Compartilhamento e validação de perfis de e-sports (via Faceit)
 
 ## 🌟 Funcionalidades Principais
 
@@ -70,6 +82,7 @@ O projeto utiliza o Firebase para:
   - Firebase (Auth e Firestore) para autenticação e dados
   - Microsserviço Google Cloud Vision para análise de documentos
   - FACEIT API para estatísticas de jogadores
+  - OpenAI API para análise inteligente de perfis sociais
   - Backend RESTful para persistência
 
 ## 🔌 Microsserviços
@@ -77,7 +90,7 @@ O projeto utiliza o Firebase para:
 ### Google Cloud Vision Service
 Este serviço está em um repositório separado e é responsável por toda a análise e validação de documentos.
 
-- **Repositório**: [Link para o repositório do microsserviço]
+- **Repositório**: [https://github.com/joaomgsb/api-know-your-fan]
 - **Funcionalidades**:
   - Processamento de imagens de documentos
   - Extração de texto via OCR
@@ -87,6 +100,22 @@ Este serviço está em um repositório separado e é responsável por toda a an�
 - **Como Integrar**:
   1. Clone e configure o microsserviço separadamente
   2. Garanta que o serviço esteja rodando antes de usar as funcionalidades de documento
+
+### OpenAI Service
+Este serviço é utilizado para análise inteligente dos perfis sociais dos fãs.
+
+- **Funcionalidades**:
+  - Análise de relevância do perfil
+  - Avaliação do nível de engajamento com e-sports
+  - Identificação de interesses específicos relacionados à FURIA
+  - Geração de recomendações personalizadas
+  - Análise de padrões de interação
+
+- **Como Funciona**:
+  1. Coleta dados do perfil social (times seguidos, interações recentes, jogos favoritos)
+  2. Processa os dados usando a API da OpenAI
+  3. Retorna análises estruturadas em formato JSON
+  4. Gera insights acionáveis para melhorar o engajamento
 
 ## 📋 Pré-requisitos
 
@@ -122,6 +151,9 @@ VITE_FIREBASE_APP_ID=seu_app_id
 
 # FACEIT
 VITE_FACEIT_API_KEY=sua_chave_faceit_api
+
+# OpenAI
+VITE_OPENAI_API_KEY=sua_chave_openai_api
 ```
 
 ## 🎮 Como Usar
@@ -151,10 +183,10 @@ know-your-fan/
 │       └── maps/         # Imagens dos mapas CS2
 ├── src/
 │   ├── components/       # Componentes React
-│   ├── contexts/        # Contextos globais
-│   ├── pages/           # Páginas da aplicação
-│   ├── services/        # Integrações com APIs
-│   └── styles/          # Estilos globais
+│   ├── contexts/         # Contextos globais
+│   ├── pages/            # Páginas da aplicação
+│   ├── services/         # Integrações com APIs
+│   └── styles/           # Estilos globais
 └── ...
 ```
 
@@ -192,4 +224,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 - FURIA Esports pelo desafio
 - FACEIT pela disponibilização da API
-- Google Cloud pela infraestrutura de IA 
+- Google Cloud pela infraestrutura de IA
