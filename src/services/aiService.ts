@@ -55,7 +55,7 @@ export class AIService {
       formdata.append('base64', documentBase64);
 
       const reqOptions = {
-        url: "http://localhost:5002/verify-document",
+        url: `${import.meta.env.VITE_API_URL}/verify-document`,
         method: "POST",
         data: formdata,
       }

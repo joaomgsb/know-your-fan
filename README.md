@@ -97,9 +97,33 @@ Este serviço está em um repositório separado e é responsável por toda a an�
   - Validação de autenticidade
   - Análise de qualidade da imagem
 
-- **Como Integrar**:
-  1. Clone e configure o microsserviço separadamente
-  2. Garanta que o serviço esteja rodando antes de usar as funcionalidades de documento
+#### 🌐 Integração com Microsserviço Externo (Google Vision)
+
+A verificação de documentos utiliza um microsserviço externo hospedado separadamente com suporte à API REST. Para garantir que a aplicação funcione tanto em ambiente local quanto em produção sem alterar o código-fonte, utilizamos uma variável de ambiente:
+
+##### 🔧 Configuração da URL da API
+
+```env
+# .env.local (em ambiente local)
+VITE_API_URL=http://localhost:5002
+```
+
+No Netlify (produção), defina essa variável no painel de configurações:
+
+- **VITE_API_URL** = `https://api-know-your-fan.onrender.com`
+
+Assim, o frontend usa a variável `VITE_API_URL` para construir a URL dinamicamente:
+
+```ts
+url: `${import.meta.env.VITE_API_URL}/verify-document`
+```
+
+> ✅ **Vantagem**: essa abordagem evita a necessidade de alterar o código-fonte entre ambiente local e produção.
+
+##### 📍 Microsserviço em Produção
+
+- **URL pública da API**: [`https://api-know-your-fan.onrender.com`](https://api-know-your-fan.onrender.com)
+- **Endpoint de verificação**: `POST /verify-document`
 
 ### OpenAI Service
 Este serviço é utilizado para análise inteligente dos perfis sociais dos fãs.
@@ -154,6 +178,9 @@ VITE_FACEIT_API_KEY=sua_chave_faceit_api
 
 # OpenAI
 VITE_OPENAI_API_KEY=sua_chave_openai_api
+
+# Microsserviço
+VITE_API_URL=http://localhost:5002
 ```
 
 ## 🎮 Como Usar
