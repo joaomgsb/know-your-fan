@@ -61,9 +61,11 @@ const FaceitPage: React.FC = () => {
       if (data.player_id) {
         const stats = await faceitService.getPlayerStats(data.player_id);
         const history = await faceitService.getPlayerHistory(data.player_id);
+
+        console.log(history)
         
         // Processar os valores numéricos corretamente
-        const kdRatio = parseFloat(stats.lifetime['K/D Ratio']);
+        const kdRatio = parseFloat(stats.lifetime['Average K/D Ratio']);
         const hsPercent = parseFloat(stats.lifetime['Average Headshots %']);
         const winRate = parseFloat(stats.lifetime['Win Rate %']);
         
@@ -147,6 +149,7 @@ const FaceitPage: React.FC = () => {
               const date = new Date(match.started_at * 1000);
               const formattedDate = `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })} - ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
               
+              console.log(match)
               // Ajusta o placar baseado em qual time o jogador estava
               const myScore = match.playerTeam === 'faction1' ? match.results.score.faction1 : match.results.score.faction2;
               const enemyScore = match.playerTeam === 'faction1' ? match.results.score.faction2 : match.results.score.faction1;

@@ -73,6 +73,7 @@ interface UserContextType {
   updateUser: (data: Partial<UserData>) => Promise<void>;
   uploadDocument: (file: File, type: string) => Promise<void>;
   linkSocialProfile: (platform: string, username: string, url: string) => Promise<void>;
+  removeSocialProfile: (profileId: string) => Promise<void>;
   verifyDocument: (documentId: string) => Promise<DocumentAnalysisResult>;
   analyzeSocialProfile: (socialProfileId: string) => Promise<SocialProfileAnalysisResult>;
 }
@@ -201,14 +202,37 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error('Usuário não autenticado');
       }
       
-      // Vincular perfil de rede social através do backend
       const updatedUser = await apiService.linkSocialProfile(user.id, platform, username, url);
-      
-      // Atualizar o usuário no contexto
       setUser(updatedUser);
-      toast.success(`Perfil do ${platform} vinculado com sucesso!`);
+      toast.success('Perfil social vinculado com sucesso!');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Falha ao vincular perfil');
+      toast.error(error instanceof Error ? error.message : 'Falha ao vincular perfil social');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeSocialProfile = async (profileId: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+      
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Remover o perfil do array de perfis
+      const updatedProfiles = user.socialProfiles?.filter((_, index) => index.toString() !== profileId);
+      
+      // Atualizar o usuário com os perfis atualizados
+      const updatedUser = await apiService.updateUser(user.id, {
+        socialProfiles: updatedProfiles
+      });
+      
+      setUser(updatedUser);
+      toast.success('Perfil social removido com sucesso!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Falha ao remover perfil social');
       throw error;
     } finally {
       setIsLoading(false);
@@ -295,6 +319,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateUser,
       uploadDocument,
       linkSocialProfile,
+      removeSocialProfile,
       verifyDocument,
       analyzeSocialProfile
     }}>
