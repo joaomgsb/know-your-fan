@@ -62,16 +62,21 @@ const GamingProfiles: React.FC<Props> = ({ profiles, isEditing, onUpdate, userIn
       });
 
       if (!validation.isValid) {
-        toast.error(validation.reason || 'Perfil não é relevante para seus interesses');
+        toast.error(`${validation.reason} (Confiança: ${Math.round(validation.confidence * 100)}%)`);
         return;
       }
 
       const updatedProfiles = [...profiles, newProfile];
       onUpdate(updatedProfiles);
       setNewProfile({ platform: '', username: '', profileUrl: '' });
-      toast.success('Perfil adicionado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao validar perfil');
+      toast.success(`Perfil adicionado com sucesso! (Confiança: ${Math.round(validation.confidence * 100)}%)`);
+    } catch (err: unknown) {
+      console.error('Erro ao validar perfil:', err);
+      if (err instanceof Error) {
+        toast.error(`Erro: ${err.message}`);
+      } else {
+        toast.error('Erro ao validar perfil');
+      }
     } finally {
       setIsValidating(false);
     }

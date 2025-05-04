@@ -1,3 +1,5 @@
+import { validateProfileWithAI } from './openaiService';
+
 interface ValidationResponse {
   isValid: boolean;
   confidence: number;
@@ -13,12 +15,9 @@ interface ProfileValidationData {
 
 // Função que simula uma validação com IA
 export const validateProfileRelevance = async (data: ProfileValidationData): Promise<ValidationResponse> => {
-  const { platform, profileUrl, userInterests } = data;
+  const { platform, username, profileUrl, userInterests } = data;
   
-  // Aqui você pode integrar com um serviço de IA real
-  // Por enquanto, vamos fazer algumas validações básicas
-
-  // Validar formato da URL baseado na plataforma
+  // Primeiro, validar formato básico da URL
   const urlPatterns = {
     'FACEIT': /faceit\.com\/([\w-]+)/i,
     'GamersClub': /gamersclub\.com\.br\/player/i,
@@ -31,31 +30,46 @@ export const validateProfileRelevance = async (data: ProfileValidationData): Pro
     return {
       isValid: false,
       confidence: 0.9,
-      reason: `URL inválida para a plataforma ${platform}. Por favor, verifique o formato correto.`
+      reason: `URL inválida para a plataforma ${platform}. O sistema detectou com alta certeza que este não é um link válido do ${platform}.`
     };
   }
 
-  // Verificar se a plataforma está relacionada aos interesses do usuário
-  const platformGames: Record<string, string[]> = {
-    'FACEIT': ['CS2'],
-    'GamersClub': ['CS2'],
-    'Steam': ['CS2', 'Rainbow Six'],
-    'Riot Games': ['Valorant', 'League of Legends']
-  };
+  // Se a URL é válida, usar IA para análise mais profunda
+  try {
+    const aiValidation = await validateProfileWithAI(
+      platform,
+      username,
+      profileUrl,
+      userInterests
+    );
 
-  const relevantGames = platformGames[platform as keyof typeof platformGames] || [];
-  const hasRelevantInterests = relevantGames.some(game => userInterests.includes(game));
+    return aiValidation;
+  } catch (error) {
+    console.error('Erro na validação com IA, usando validação básica:', error);
+    
+    // Fallback para validação básica em caso de erro
+    const platformGames: Record<string, string[]> = {
+      'FACEIT': ['CS2'],
+      'GamersClub': ['CS2'],
+      'Steam': ['CS2', 'Rainbow Six'],
+      'Riot Games': ['Valorant', 'League of Legends']
+    };
 
-  if (!hasRelevantInterests) {
+    const relevantGames = platformGames[platform as keyof typeof platformGames] || [];
+    const hasRelevantInterests = relevantGames.some(game => userInterests.includes(game));
+
+    if (!hasRelevantInterests) {
+      return {
+        isValid: false,
+        confidence: 0.7,
+        reason: `Esta plataforma é mais relacionada a ${relevantGames.join(', ')}, que não estão nos seus interesses.`
+      };
+    }
+
     return {
-      isValid: false,
-      confidence: 0.7,
-      reason: `Esta plataforma é mais relacionada a ${relevantGames.join(', ')}, que não estão nos seus interesses.`
+      isValid: true,
+      confidence: 0.6,
+      reason: 'Validação básica aplicada devido a erro na IA'
     };
   }
-
-  return {
-    isValid: true,
-    confidence: 0.95
-  };
 }; 
