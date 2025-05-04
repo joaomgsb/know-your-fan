@@ -1,19 +1,5 @@
+import axios from 'axios';
 import { openai } from './openaiService';
-
-// Interfaces para resultados de verificação e análise
-// Interface não utilizada, comentada para evitar erro de lint
-// export interface AIVerificationResult {
-//   isValid: boolean;
-//   confidence: number;
-//   details?: Record<string, string | null>;
-// }
-
-// Interface não utilizada, comentada para evitar erro de lint
-// export interface SocialMediaAnalysisResult {
-//   riskLevel: 'low' | 'medium' | 'high';
-//   flags: string[];
-//   details?: Record<string, unknown>;
-// }
 
 export interface DocumentAnalysisResult {
   isValid: boolean;
@@ -25,21 +11,27 @@ export interface SocialProfileAnalysisResult {
   riskLevel: 'low' | 'medium' | 'high';
   flags: string[];
   details: {
-    followedTeams: string[];
-    recommendations: string[];
-    relevanceScore: number;
-    esportsScore: number;
-    furiaScore: number;
-    keywords: string[];
+    followedTeams?: string[];
+    recommendations?: string[];
+    relevanceScore?: number;
+    esportsScore?: number;
+    furiaScore?: number;
+    keywords?: string[];
+    confidence?: number;
+    verificationId?: string;
+    [key: string]: any;
   };
 }
 
-// Credenciais da API do Twitter
-const TWITTER_CREDENTIALS = {
-  apiKey: "hrBrMSyN45gNPqED2PbVqawxK",
-  apiKeySecret: "ka7OLLbbpk1oSXbJnGvDTJnKpsUBof3IW4seGOrNEOmDNwHUad",
-  bearerToken: "AAAAAAAAAAAAAAAAAAAAAKWw0wEAAAAAFAP5n78EnPLIRUe6nB1of4SB4bE%3DBobumuxAFZpmHJeax0aAVwHigFDNt9TLTvgDrYraODpMIeXGbW"
-};
+export interface DocumentVerificationResult {
+  riskLevel: 'low' | 'medium' | 'high';
+  flags: string[];
+  details: {
+    confidence: number;
+    verificationId: string;
+    [key: string]: any;
+  };
+}
 
 /**
  * Para configurar as chaves de API, crie um arquivo .env.local na raiz do projeto com as seguintes variáveis:
@@ -52,83 +44,33 @@ const TWITTER_CREDENTIALS = {
  * Serviço de IA para análise de documentos e perfis de mídia social
  */
 export class AIService {
-  private TWITTER_API_URL = 'https://api.twitter.com/2';
-
   /**
    * Verifica um documento usando a API do Google Cloud Vision
    * @param documentBase64 Documento em formato base64
    */
   public async verifyDocument(documentBase64: string): Promise<DocumentAnalysisResult> {
     try {
-      // Implementação da verificação de documento
+
+      const formdata = new FormData();
+      formdata.append('base64', documentBase64);
+
+      const reqOptions = {
+        url: "http://localhost:5002/verify-document",
+        method: "POST",
+        data: formdata,
+      }
+
+      const response = await axios.request(reqOptions);
+
       return {
-        isValid: true,
-        confidence: 0.95,
-        details: {
-          type: 'cpf',
-          status: 'valid'
-        }
-      };
+        isValid: response.data.isCPFValid,
+        confidence: response.data.confidence,
+        details: response.data
+      }
+
     } catch (error) {
       console.error('Erro ao verificar documento:', error);
       throw new Error('Falha na verificação do documento');
-    }
-  }
-
-  /**
-   * Obtém dados de um perfil do Twitter usando a API oficial
-   * @param username Nome de usuário no Twitter (sem @)
-   * @private
-   */
-  private async getTwitterUserData(username: string): Promise<TwitterUserData> {
-    try {
-      // Remove @ se estiver presente
-      const sanitizedUsername = username.startsWith('@') ? username.substring(1) : username;
-      
-      const response = await axios.get(
-        `${this.TWITTER_API_URL}/users/by/username/${sanitizedUsername}`, 
-        {
-          params: {
-            'user.fields': 'public_metrics,description,created_at'
-          },
-          headers: {
-            'Authorization': `Bearer ${TWITTER_CREDENTIALS.bearerToken}`
-          }
-        }
-      );
-      
-      return response.data.data;
-    } catch (error) {
-      console.error('Erro ao obter dados do Twitter:', error);
-      throw new Error('Falha ao buscar dados do perfil no Twitter');
-    }
-  }
-  
-  /**
-   * Obtém tweets recentes de um usuário do Twitter
-   * @param userId ID do usuário no Twitter
-   * @private
-   */
-  private async getUserTweets(userId: string, maxResults: number = 100): Promise<TwitterTweet[]> {
-    try {
-      const response = await axios.get(
-        `${this.TWITTER_API_URL}/users/${userId}/tweets`,
-        {
-          params: {
-            max_results: maxResults,
-            'tweet.fields': 'public_metrics,created_at',
-            exclude: 'retweets,replies'
-          },
-          headers: {
-            'Authorization': `Bearer ${TWITTER_CREDENTIALS.bearerToken}`
-          }
-        }
-      );
-      
-      return response.data.data || [];
-    } catch (error) {
-      console.error('Erro ao obter tweets:', error);
-      return []; // Retorna array vazio em caso de falha
     }
   }
 
@@ -231,35 +173,4 @@ export class AIService {
   }
 }
 
-export const aiService = new AIService();
-
-// Interfaces para dados do Twitter
-interface TwitterPublicMetrics {
-  followers_count: number;
-  following_count: number;
-  tweet_count: number;
-  listed_count: number;
-}
-
-interface TwitterUserData {
-  id: string;
-  name: string;
-  username: string;
-  description?: string;
-  created_at: string;
-  public_metrics?: TwitterPublicMetrics;
-}
-
-interface TwitterTweetMetrics {
-  retweet_count: number;
-  reply_count: number;
-  like_count: number;
-  quote_count: number;
-}
-
-interface TwitterTweet {
-  id: string;
-  text: string;
-  created_at: string;
-  public_metrics?: TwitterTweetMetrics;
-} 
+export const aiService = new AIService(); 

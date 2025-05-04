@@ -12,7 +12,7 @@ import {
   arrayUnion
 } from "firebase/firestore";
 import { auth, db } from './firebase';
-import { AIService, DocumentAnalysisResult, SocialProfileAnalysisResult } from './aiService';
+import { AIService, DocumentAnalysisResult, SocialProfileAnalysisResult, DocumentVerificationResult } from './aiService';
 
 // Instância do serviço de IA
 const aiService = new AIService();
@@ -379,7 +379,7 @@ class APIService {
       );
       
       // Mapear o resultado da verificação para o formato do perfil de usuário
-      const formattedResult: SocialProfileAnalysisResult = {
+      const formattedResult: DocumentVerificationResult = {
         riskLevel: verificationResult.isValid ? 'low' : 'high',
         flags: [],
         details: {
