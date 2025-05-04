@@ -41,6 +41,8 @@ serviceAccount*.json
 
 # Arquivos de ambiente e credenciais
 .env.local
+.env.development
+.env.production
 
 # Sistema operacional
 Thumbs.db
