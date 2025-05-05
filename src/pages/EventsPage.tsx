@@ -51,7 +51,7 @@ const UPCOMING_EVENTS = [
     time: '10:00 - 18:00',
     location: 'Rio de Janeiro, RJ',
     description: 'Visite o stand da FURIA na Brasil Game Show e participe de atividades exclusivas.',
-    image: 'https://images.pexels.com/photos/5477919/pexels-photo-5477919.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+    image: 'https://images.pexels.com/photos/3945683/pexels-photo-3945683.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     category: 'Presencial',
     tags: ['Feira', 'Meet & Greet'],
     capacity: 1500,
